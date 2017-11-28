@@ -19,13 +19,14 @@ import java.io.IOException;
 
 public class MainActivity extends AppCompatActivity {
     private String content;
+    private TextView textView;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        TextView textView = findViewById(R.id.text);
+        textView = findViewById(R.id.text);
         textView.setMovementMethod(new ScrollingMovementMethod());
         //putting JSON data into a string
         content = " [\n" +
@@ -85,56 +86,87 @@ public class MainActivity extends AppCompatActivity {
                 "  ] ";
     }
 
-
-
+    /**
+     * writes into the textView a string consisting of the concatenation of the color field (i.e. black) of the colors having green component equal to 255.
+     * @param view The TextView
+     * @throws JSONException
+     */
  public void list(View view) throws JSONException {
-        JSONArray printout = (JSONArray) new JSONTokener(content).nextValue();
-        JSONObject print = printout.getJSONObject(0);
-
-     Toast.makeText(this, "Result" + print, Toast.LENGTH_SHORT).show();
-
+     try {
+         JSONArray colors = (JSONArray) new JSONTokener(content).nextValue();
+         String printOut="";
+         for(int i = 0;i < colors.length();i++) {
+             JSONObject color = colors.getJSONObject(i);
+             JSONObject colorCode = color.getJSONObject("code");
+             JSONArray rgba = (JSONArray) colorCode.get("rgba");
+             String component = Integer.toString(rgba.getInt(1));
+             if (component.equals("255"))
+                 printOut = printOut + ", "+ color.get("color");
+         }
+         textView.setText("Color Field: " + printOut);
+     } catch (JSONException e) {
+         e.printStackTrace();
+     }
  }
 
-
-
-
-        public void count(View view) throws JSONException {
-            TextView textView = findViewById(R.id.text);
-            JSONObject jsonObject = new JSONObject(content);
-
-            JSONArray colorArray = jsonObject.getJSONArray("colors");
-
-
-            String textToPrint = "";
-            for (int i =0; i< colorArray.length(); i++) {
-                JSONObject message = (JSONObject) colorArray.getJSONObject(i);
-                textToPrint += (message.get("rgba")) + "\n";
+    /**
+     * writes into the textView the number of colors having green component equal to 255.
+     * @param view The TextView
+     * @throws JSONException
+     */
+    public void count(View view) throws JSONException
+    {
+        try {
+            JSONArray colors = (JSONArray) new JSONTokener(content).nextValue();
+            int countGreen = 0;
+            for(int i=0;i<colors.length();i++) {
+                JSONObject color = colors.getJSONObject(i);
+                JSONObject colorCode = color.getJSONObject("code");
+                JSONArray rgba = (JSONArray) colorCode.get("rgba");
+                if (rgba.getInt(1) == 255)
+                    countGreen++;
             }
-
-            Toast.makeText(this, textToPrint, Toast.LENGTH_SHORT).show();
-
-           JSONObject message = (JSONObject)colorArray.get(1);
-            JSONObject user = (JSONObject) message.get("user");
-            String name = (String) user.get("name");
-
-            while (colorArray.hasNext()) {
-                String name = reader.nextName();
-                if (name.equals("id")) {
-                    message.id = reader.nextLong();
-                } else if (name.equals("text")) {
-                    message.text = reader.nextString();
-                } else if (name.equals("geo") && reader.peek() != JsonToken.NULL) {
-                    message.geo = readDoublesArray(reader);
-                } else if (name.equals("user")) {
-                    message.user = readUser(reader);
-                } else {
-                    reader.skipValue();
-                }
-            }
-            reader.endObject();
-            return message;
+            textView.setText("The number of colors having green component: " + Integer.toString(countGreen));
+        } catch (JSONException e) {
+            e.printStackTrace();
         }
+    }
 
+
+    /**
+     * adding a new color (color: orange, category: hue, rgba: 255,165,0,1, hex: #FA0),
+     * then serializes the JSON data to a string and writes it into the textView.
+     * @param view
+     * @throws JSONException
+     */
+    public void modify(View view) throws JSONException
+    {
+        try {
+            JSONArray colors = (JSONArray) new JSONTokener(content).nextValue();
+            JSONObject color = new JSONObject();
+            color.put("color", "orange");
+            color.put("category","hue");
+
+            JSONObject code = new JSONObject();
+            JSONArray rgba = new JSONArray();
+
+            rgba.put(255);
+            rgba.put(165);
+            rgba.put(0);
+            rgba.put(1);
+
+            code.put("rgba",rgba);
+            code.put("hex","#FA0");
+            color.put("code", code);
+
+            colors.put(color); //add to existing array
+            String printOut = colors.toString(2);
+            textView.setText(printOut);
+
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
 
 
 
